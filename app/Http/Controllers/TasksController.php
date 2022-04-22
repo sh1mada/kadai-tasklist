@@ -15,14 +15,18 @@ class TasksController extends Controller
      */
     public function index()
     {
-         // メッセージ一覧を取得
-        $tasks = Task::all();
-
-        // メッセージ一覧ビューでそれを表示
-        return view('tasks.index', [
+        if(\Auth::check()){
+            
+            $user=\Auth::user();
+            $tasks = $user->tasks;
+            
+            return view('tasks.index', [
             'tasks' => $tasks,
         ]);
-        
+        }
+        // メッセージ一覧ビューでそれを表示
+        return view('welcome');
+
     }
 
     /**
@@ -47,14 +51,19 @@ class TasksController extends Controller
      */
     public function store(Request $request)
     {
+
         $request->validate([
             'content'=>'required',
             'status'=>'required|max:10',
             ]);
-        $task=new Task;
+        /*$task=new Task;
         $task->content=$request->content;
         $task->status=$request->status;
-        $task->save();
+        $task->save();*/
+        $request->user()->tasks()->create([
+            'content'=>$request->content,
+            'status'=>$request->status,
+        ]);
         
         return redirect('/');
     }
@@ -66,12 +75,15 @@ class TasksController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function show($id)
-    {
+    {   
         $task=Task::findOrFail($id);
         
+        if(\Auth::id()==$task->user_id){
         return view('tasks.show',[
             'task'=>$task,
             ]);
+    }
+        return redirect('/');
     }
 
     /**
@@ -119,6 +131,8 @@ class TasksController extends Controller
     public function destroy($id)
     {
         $task=Task::findOrFail($id);
+        
+        //if(\Auth::id==$task->user_id)
         $task->delete();
         
         return redirect('/');
